@@ -60,3 +60,20 @@ For a Linux host, the included `Procfile` starts the app with Gunicorn. Configur
 ## Deploy on Render
 
 The root `render.yaml` defines a Free web service in Singapore, uses the `main` branch, and deploys new commits automatically. Create a Render Blueprint from this repository. During the initial setup, enter the Supabase Postgres connection string only in Render's private prompt for `DATABASE_URL`; Render generates `SECRET_KEY` and enables secure session cookies.
+
+## Testing guide
+
+Live app: `<YOUR_RENDER_APP_URL>` (replace this placeholder with the public Render URL; do not add account passwords or secrets to this public README).
+
+Render's free service may take a little while to wake after being idle. Wait for the page to finish loading before testing. The database must be reachable and contain the `app_users`, `links`, and `click_events` tables.
+
+Suggested judge path:
+
+1. Register or sign in with a regular judge account.
+2. Create a short link using a valid `https://` destination, open it, then view its report.
+3. Try an invalid destination and a duplicate short code; both should be rejected.
+4. Import a UTF-8 CSV with `destination_url` and optional `short_code` columns. Include a valid row, an invalid URL, and a duplicate code to see row handling.
+5. Sign in as an admin and disable a link. Opening it should show HTTP 410; its analytics should remain available.
+6. As a regular user, attempting the admin disable action should be rejected with HTTP 403.
+
+Admin accounts are created with `flask --app app seed-admin`. Demo data can be added for an existing account with `flask --app app seed-demo`; it creates three links and 16 synthetic visits and stops if any demo code already exists. These commands change database records, so use the intended judge account and database.
