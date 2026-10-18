@@ -306,7 +306,8 @@ def dashboard():
 
     links_query = Link.query if user.role == "admin" else Link.query.filter_by(user_id=user.id)
     links = links_query.order_by(Link.created_at.desc()).all()
-    return render_template("dashboard.html", user=user, links=links)
+    sample_codes = {"demo-event", "demo-launch", "demo-signup"}
+    return render_template("dashboard.html", user=user, links=links, sample_codes=sample_codes)
 
 
 @app.post("/links")
