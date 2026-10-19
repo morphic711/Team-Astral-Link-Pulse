@@ -35,7 +35,8 @@ Python 3.14, Flask, Jinja2, HTML/CSS, Flask-SQLAlchemy, Flask-WTF, PostgreSQL on
 
 ## Testing guide for judges
 
-Test logins (user and admin) are in the submission form, not in this public repo. You can also register your own account at `/register`. The test user has three **sample** links (`demo-event`, `demo-launch`, `demo-signup`).
+Test logins (user=demo-test@gmail.com pass=12345678) and (admin = judge-admin@linkpulse.test pass=123456789000 ).
+You can also register your own account at `/register`.The regular judge account has its own links; admins can view all links, including test links. The demo data uses three **sample** links (`demo-event`, `demo-launch`, `demo-signup`).
 
 1. Sign in and open the dashboard.
 2. Create a short link (try an invalid URL or a duplicate code to see validation).
