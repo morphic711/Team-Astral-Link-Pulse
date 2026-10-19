@@ -3,7 +3,7 @@
 {% block content %}
 <section class="link-error-page" aria-labelledby="page-title">
   <p class="eyebrow"><span class="eyebrow-dot"></span> LINKPULSE <span class="eyebrow-rule"></span> LINK STATUS</p>
-  <p class="error-index">404 / 410</p>
+  <p class="error-index">{{ status_code or '404 / 410' }}</p>
   <h1 id="page-title">This link can’t<br><em>take you there.</em></h1>
   <p class="error-copy">{{ message }}</p>
   <a class="quiet-button" href="{{ url_for('home') }}">Return to LinkPulse <span aria-hidden="true">→</span></a>
