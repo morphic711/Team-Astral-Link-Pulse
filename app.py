@@ -601,7 +601,7 @@ def link_analytics(link_id: str):
         .limit(20)
         .all()
     )
-    return render_template("analytics.html", link=link, recent_clicks=recent_clicks)
+    return render_template("analytics.html", link=link, recent_clicks=recent_clicks, user=user)
 
 
 @app.cli.command("seed-admin")
