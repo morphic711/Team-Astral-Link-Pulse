@@ -1,69 +1,96 @@
 {% extends "base.html" %}
 {% block title %}Your workspace · LinkPulse{% endblock %}
 {% block content %}
-<section class="workspace-page" aria-labelledby="page-title">
+<section class="workspace-page dashboard-page" aria-labelledby="page-title">
+  <aside class="workspace-rail" aria-label="Workspace sections">
+    <p class="eyebrow"><span class="eyebrow-dot"></span> LINKPULSE</p>
+    <nav class="workspace-nav">
+      <a href="#link-builder" aria-current="location">Create link</a>
+      <a href="#link-import">Import CSV</a>
+      <a href="#links-title">Campaign links</a>
+    </nav>
+  </aside>
+  <div class="dashboard-content">
   <div class="workspace-heading">
     <div>
       <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR CAMPAIGN DESK <span class="eyebrow-rule"></span> WORKSPACE</p>
       <h1 id="page-title">Good to have you, <em>{{ user.email.split('@')[0] }}</em>.</h1>
       <p class="intro-copy">Create and keep your campaign links together in one place. Start by entering a full web address below.</p>
     </div>
-    <form method="post" action="{{ url_for('logout') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="quiet-button" type="submit">Sign out <span aria-hidden="true">↗</span></button>
-    </form>
   </div>
 
   <div class="redirect-note"><span class="eyebrow-dot"></span><p>Open any short address to redirect to its destination. Visits are recorded with a privacy-preserving IP hash.</p></div>
 
-  <section class="link-builder" aria-labelledby="builder-title">
+  <section class="link-builder" id="link-builder" aria-labelledby="builder-title">
     <div class="builder-intro">
-      <p class="eyebrow">LINK WORKBENCH <span class="eyebrow-rule"></span> 01</p>
-      <h2 id="builder-title">Make a link<br><em>ready to share.</em></h2>
-      <p>Give your destination a short address. Use a custom code or let LinkPulse make one.</p>
-      <div class="builder-index"><span>01</span><span>DESTINATION IN<br>SHORT LINK OUT</span></div>
+      <div>
+        <p class="eyebrow">LINK WORKBENCH <span class="eyebrow-rule"></span> 01</p>
+        <h2 id="builder-title">Create a short link</h2>
+        <p>Set a destination and optional rules. Your link is ready as soon as you create it.</p>
+      </div>
+      <div class="builder-steps" aria-label="How it works">
+        <span><b>1</b> Add destination</span><span><b>2</b> Set options</span><span><b>3</b> Share your link</span>
+      </div>
     </div>
 
     <form class="link-form" method="post" action="{{ url_for('create_link') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="destination-url">Destination URL</label>
-      <input id="destination-url" name="destination_url" type="url" maxlength="2048" placeholder="https://your-site.com/campaign" required>
-      <p class="field-hint">Use the full web address, including https://. We’ll check that it looks valid before saving.</p>
+      <div class="form-field form-field-wide"><label for="destination-url">Destination URL</label>
+        <input id="destination-url" name="destination_url" type="url" maxlength="2048" placeholder="https://your-site.com/campaign" required>
+        <p class="field-hint">Use the full web address, including https://. We’ll check that it looks valid before saving.</p>
+      </div>
 
-      <label for="short-code">Custom code <span class="optional-label">OPTIONAL</span></label>
-      <div class="code-input-wrap"><span>{{ request.host }}/</span><input id="short-code" name="short_code" type="text" maxlength="32" pattern="[A-Za-z0-9_-]{1,32}" placeholder="spring-launch" autocomplete="off" aria-describedby="code-hint"></div>
-      <p class="field-hint" id="code-hint">1–32 letters, numbers, hyphens, or underscores. Leave blank to generate one.</p>
-
-      <label for="expires-at">Expiry date <span class="optional-label">OPTIONAL · UTC</span></label>
-      <input id="expires-at" name="expires_at" type="date" min="{{ today_utc }}">
-      <p class="field-hint">The link remains active through the selected date in UTC.</p>
-
-      <label for="click-limit">Click limit <span class="optional-label">OPTIONAL</span></label>
-      <input id="click-limit" name="click_limit" type="number" min="1" step="1" placeholder="e.g. 100">
-      <p class="field-hint">The link stops after this many recorded visits.</p>
-
-      <label for="link-password">Password <span class="optional-label">OPTIONAL</span></label>
-      <input id="link-password" name="link_password" type="password" maxlength="128" autocomplete="new-password" placeholder="Protect this link">
-      <p class="field-hint">Visitors must enter this password before they are redirected.</p>
+      <details class="form-options form-field-wide" id="link-options">
+        <summary><span>Set options</span><span class="options-toggle-icon" aria-hidden="true">+</span></summary>
+        <div class="options-grid">
+          <div class="options-column">
+            <div class="form-field"><label for="short-code">Custom code <span class="optional-label">OPTIONAL</span></label>
+              <div class="code-input-wrap"><span>{{ request.host }}/</span><input id="short-code" name="short_code" type="text" maxlength="32" pattern="[A-Za-z0-9_-]{1,32}" placeholder="spring-launch" autocomplete="off" aria-describedby="code-hint"></div>
+              <p class="field-hint" id="code-hint">1–32 letters, numbers, hyphens, or underscores. Leave blank to generate one.</p>
+            </div>
+            <div class="form-field"><label for="click-limit">Click limit <span class="optional-label">OPTIONAL</span></label>
+              <input id="click-limit" name="click_limit" type="number" min="1" step="1" placeholder="e.g. 100">
+              <p class="field-hint">The link stops after this many recorded visits.</p>
+            </div>
+          </div>
+          <div class="options-column">
+            <div class="form-field"><label for="expires-at">Expiry date <span class="optional-label">OPTIONAL · UTC</span></label>
+              <input id="expires-at" name="expires_at" type="date" min="{{ today_utc }}">
+              <p class="field-hint">The link remains active through the selected date in UTC.</p>
+            </div>
+            <div class="form-field"><label for="link-password">Password <span class="optional-label">OPTIONAL</span></label>
+              <input id="link-password" name="link_password" type="password" maxlength="128" autocomplete="new-password" placeholder="Protect this link">
+              <p class="field-hint">Visitors must enter this password before they are redirected.</p>
+            </div>
+          </div>
+        </div>
+      </details>
 
       <button class="primary-button" type="submit">Create short link <span aria-hidden="true">↗</span></button>
     </form>
   </section>
 
-  <section class="csv-import" aria-labelledby="csv-import-title">
-    <div>
-      <p class="eyebrow">BULK ADD <span class="eyebrow-rule"></span> CSV</p>
-      <h2 id="csv-import-title">Import campaign links</h2>
-      <p>CSV columns: <code>destination_url</code> (required) and <code>short_code</code> (optional). Use a UTF-8 CSV; invalid rows and duplicate codes are skipped. Up to 500 rows, 2 MB.</p>
-      <a class="csv-example" href="data:text/csv;charset=utf-8,destination_url%2Cshort_code%0Ahttps%3A%2F%2Fexample.com%2Fcampaign%2Cspring-launch" download="linkpulse-import-example.csv">Download example CSV</a>
+  <details class="csv-import csv-import-collapsible" id="link-import" {% if not links %}open{% endif %}>
+    <summary class="csv-import-toggle" aria-controls="csv-import-content">
+      <span>
+        <span class="eyebrow">BULK ADD <span class="eyebrow-rule"></span> CSV</span>
+        <span class="csv-import-title" id="csv-import-title">Import campaign links</span>
+      </span>
+      <span class="import-toggle-label">{{ 'Add links from a CSV' if links else 'CSV import options' }} <span class="import-toggle-icon" aria-hidden="true">⌄</span></span>
+    </summary>
+    <div class="csv-import-body" id="csv-import-content">
+      <div>
+        <p>CSV columns: <code>destination_url</code> (required) and <code>short_code</code> (optional). Use a UTF-8 CSV; invalid rows and duplicate codes are skipped. Up to 500 rows, 2 MB.</p>
+        <a class="csv-example" href="data:text/csv;charset=utf-8,destination_url%2Cshort_code%0Ahttps%3A%2F%2Fexample.com%2Fcampaign%2Cspring-launch" download="linkpulse-import-example.csv">Download example CSV</a>
+      </div>
+      <form method="post" action="{{ url_for('import_links') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="csv-file">CSV file</label>
+        <input id="csv-file" name="csv_file" type="file" accept=".csv,text/csv" required>
+        <button class="primary-button" type="submit">Import links <span aria-hidden="true">↗</span></button>
+      </form>
     </div>
-    <form method="post" action="{{ url_for('import_links') }}" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="csv-file">CSV file</label>
-      <input id="csv-file" name="csv_file" type="file" accept=".csv,text/csv" required>
-      <button class="primary-button" type="submit">Import links <span aria-hidden="true">↗</span></button>
-    </form>
-  </section>
+  </details>
 
   <section class="links-section" aria-labelledby="links-title">
     <div class="list-heading">
@@ -77,11 +104,11 @@
     {% if links %}
       <div class="link-table-wrap">
         <table class="link-table">
-          <thead><tr><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th>OWNER</th>{% endif %}<th>CREATED</th><th>EXPIRES</th><th>VISITS</th><th>REPORT</th>{% if user.role == 'admin' %}<th>ADMIN</th>{% endif %}</tr></thead>
+          <thead><tr><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th class="col-owner">OWNER</th>{% endif %}<th class="col-created">CREATED</th><th class="col-expiry">EXPIRES</th><th class="col-visits">VISITS</th><th class="col-report">REPORT</th>{% if user.role == 'admin' %}<th class="col-actions">ACTIONS</th>{% endif %}</tr></thead>
           <tbody>
             {% for link in links %}
               <tr>
-                  <td>
+                  <td data-label="Short link">
                     <div class="short-link-actions">
                       <a class="short-address" href="{{ url_for('redirect_short_link', short_code=link.short_code) }}"><code>{{ link.short_code }}</code></a>
                       <button class="copy-link-button" type="button" data-copy-url="{{ url_for('redirect_short_link', short_code=link.short_code, _external=True) }}">Copy link</button>
@@ -89,14 +116,14 @@
                     <span class="copy-link-status" aria-live="polite"></span>
                     <span class="entry-state">{{ 'SAMPLE DATA · ' if link.short_code in sample_codes else '' }}{{ link.status|upper }} · {{ 'HTTP 302' if link.status == 'active' else 'REDIRECT BLOCKED' }}</span>
                   </td>
-                <td><a class="destination-link" href="{{ link.destination_url }}" target="_blank" rel="noopener noreferrer" title="Open destination in a new tab">{{ link.destination_url }}</a></td>
-                  {% if user.role == 'admin' %}<td>{{ link.owner.email }}</td>{% endif %}
-                <td class="date-cell">{{ link.created_at.strftime('%b %d, %Y') if link.created_at else 'Just now' }}</td>
-                <td class="date-cell">{{ link.expires_at.strftime('%b %d, %Y') if link.expires_at else 'Never' }}</td>
-                <td class="visits-cell">{{ link.click_count }}</td>
-                <td><a class="report-link" href="{{ url_for('link_analytics', link_id=link.id) }}">View report <span aria-hidden="true">↗</span></a></td>
+                <td data-label="Destination"><a class="destination-link" href="{{ link.destination_url }}" target="_blank" rel="noopener noreferrer" title="{{ link.destination_url }}">{{ link.destination_url }}</a></td>
+                  {% if user.role == 'admin' %}<td class="col-owner" data-label="Owner">{{ link.owner.email }}</td>{% endif %}
+                <td class="date-cell col-created" data-label="Created">{{ link.created_at.strftime('%b %d, %Y') if link.created_at else 'Just now' }}</td>
+                <td class="date-cell col-expiry" data-label="Expires">{{ link.expires_at.strftime('%b %d, %Y') if link.expires_at else 'Never' }}</td>
+                <td class="visits-cell col-visits" data-label="Visits">{{ link.click_count }}</td>
+                <td class="col-report" data-label="Report"><a class="report-link" href="{{ url_for('link_analytics', link_id=link.id) }}">View report <span aria-hidden="true">↗</span></a></td>
                   {% if user.role == 'admin' %}
-                    <td>{% if link.status == 'active' %}<form method="post" action="{{ url_for('disable_link', link_id=link.id) }}" onsubmit="return confirm('Disable this link? Its short address will stop redirecting, but its analytics will remain.');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="admin-action-button" type="submit">Disable</button></form>{% else %}<span class="entry-state">DISABLED</span>{% endif %}</td>
+                    <td class="col-actions" data-label="Actions">{% if link.status == 'active' %}<form method="post" action="{{ url_for('disable_link', link_id=link.id) }}" onsubmit="return confirm('Disable this link? Its short address will stop redirecting, but its analytics will remain.');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="admin-action-button" type="submit" title="Disable link">Disable</button></form>{% else %}<span class="entry-state">DISABLED</span>{% endif %}</td>
                   {% endif %}
               </tr>
             {% endfor %}
@@ -106,10 +133,12 @@
     {% else %}
       <div class="links-empty">
         <div class="empty-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p>No links yet. Enter a destination URL above to create your first short link, or import a CSV with a <code>destination_url</code> column.</p>
+        <p>No campaign links yet. Create a short link or import a CSV to get started.</p>
+        <div class="empty-actions"><a class="primary-button" href="#link-builder">Create your first link <span aria-hidden="true">↗</span></a><a class="empty-import-link" href="#link-import">Import CSV</a></div>
       </div>
     {% endif %}
   </section>
+  </div>
 </section>
 <script>
   document.querySelectorAll(".copy-link-button").forEach((button) => {
@@ -123,5 +152,30 @@
       }
     });
   });
+</script>
+<script>
+  const workspaceNavLinks = [...document.querySelectorAll(".workspace-nav a[href^='#']")];
+  const workspaceSections = workspaceNavLinks
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter(Boolean);
+
+  function updateWorkspaceNavigation() {
+    let currentSection = workspaceSections[0];
+    const activeLine = window.innerHeight * 0.3;
+
+    workspaceSections.forEach((section) => {
+      if (section.getBoundingClientRect().top <= activeLine) currentSection = section;
+    });
+
+    workspaceNavLinks.forEach((link) => {
+      const isCurrent = link.hash === `#${currentSection.id}`;
+      if (isCurrent) link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+    });
+  }
+
+  window.addEventListener("scroll", updateWorkspaceNavigation, { passive: true });
+  window.addEventListener("resize", updateWorkspaceNavigation);
+  updateWorkspaceNavigation();
 </script>
 {% endblock %}

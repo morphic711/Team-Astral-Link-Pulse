@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f4f0">
   <title>{% block title %}LinkPulse{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -14,7 +15,26 @@
       <span>Link<span class="wordmark-light">Pulse</span></span>
     </a>
     <span class="topbar-note">LINK MANAGEMENT <span aria-hidden="true">/</span> ANALYTICS</span>
-    <span class="topbar-index">LP&nbsp; / &nbsp;01</span>
+    <div class="topbar-tools">
+      <span class="topbar-index">LP&nbsp; / &nbsp;01</span>
+      {% block header_account %}
+        {% if user is defined and user %}
+          <div class="topbar-account">
+            <details class="profile-dropdown">
+              <summary class="rail-avatar" aria-label="Show profile email">{{ user.email[0]|upper }}</summary>
+              <div class="profile-menu">
+                <span class="profile-menu-label">SIGNED IN AS</span>
+                <span class="profile-menu-email">{{ user.email }}</span>
+                <form method="post" action="{{ url_for('logout') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="rail-signout" type="submit">Sign out</button>
+                </form>
+              </div>
+            </details>
+          </div>
+        {% endif %}
+      {% endblock %}
+    </div>
   </header>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
