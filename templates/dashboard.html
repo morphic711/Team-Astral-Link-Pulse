@@ -34,6 +34,18 @@
       <div class="code-input-wrap"><span>{{ request.host }}/</span><input id="short-code" name="short_code" type="text" maxlength="32" pattern="[A-Za-z0-9_-]{1,32}" placeholder="spring-launch" autocomplete="off" aria-describedby="code-hint"></div>
       <p class="field-hint" id="code-hint">1–32 letters, numbers, hyphens, or underscores. Leave blank to generate one.</p>
 
+      <label for="expires-at">Expiry date <span class="optional-label">OPTIONAL · UTC</span></label>
+      <input id="expires-at" name="expires_at" type="date" min="{{ today_utc }}">
+      <p class="field-hint">The link remains active through the selected date in UTC.</p>
+
+      <label for="click-limit">Click limit <span class="optional-label">OPTIONAL</span></label>
+      <input id="click-limit" name="click_limit" type="number" min="1" step="1" placeholder="e.g. 100">
+      <p class="field-hint">The link stops after this many recorded visits.</p>
+
+      <label for="link-password">Password <span class="optional-label">OPTIONAL</span></label>
+      <input id="link-password" name="link_password" type="password" maxlength="128" autocomplete="new-password" placeholder="Protect this link">
+      <p class="field-hint">Visitors must enter this password before they are redirected.</p>
+
       <button class="primary-button" type="submit">Create short link <span aria-hidden="true">↗</span></button>
     </form>
   </section>

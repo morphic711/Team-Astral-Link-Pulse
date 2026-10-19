@@ -307,7 +307,10 @@ def dashboard():
     links_query = Link.query if user.role == "admin" else Link.query.filter_by(user_id=user.id)
     links = links_query.order_by(Link.created_at.desc()).all()
     sample_codes = {"demo-event", "demo-launch", "demo-signup"}
-    return render_template("dashboard.html", user=user, links=links, sample_codes=sample_codes)
+    return render_template(
+        "dashboard.html", user=user, links=links, sample_codes=sample_codes,
+        today_utc=datetime.now(timezone.utc).date().isoformat(),
+    )
 
 
 @app.post("/links")
@@ -320,6 +323,34 @@ def create_link():
 
     destination = request.form.get("destination_url", "").strip()
     requested_code = request.form.get("short_code", "").strip()
+    expiry_date = request.form.get("expires_at", "").strip()
+    click_limit_value = request.form.get("click_limit", "").strip()
+    link_password = request.form.get("link_password", "")
+
+    expires_at = None
+    if expiry_date:
+        try:
+            # The date control is interpreted as the end of that date in UTC.
+            expires_at = datetime.strptime(expiry_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
+        except ValueError:
+            flash("Choose a valid expiry date.", "error")
+            return redirect(url_for("dashboard"))
+
+    click_limit = None
+    if click_limit_value:
+        try:
+            click_limit = int(click_limit_value)
+        except ValueError:
+            flash("Click limit must be a positive whole number.", "error")
+            return redirect(url_for("dashboard"))
+        if click_limit < 1:
+            flash("Click limit must be a positive whole number.", "error")
+            return redirect(url_for("dashboard"))
+    if len(link_password) > 128:
+        flash("Link passwords must be 128 characters or fewer.", "error")
+        return redirect(url_for("dashboard"))
 
     if not destination or len(destination) > 2048:
         flash("Enter a destination URL up to 2,048 characters long.", "error")
@@ -356,7 +387,14 @@ def create_link():
         flash("That short code is already in use. Choose another one.", "error")
         return redirect(url_for("dashboard"))
 
-    link = Link(user_id=user.id, short_code=code, destination_url=destination)
+    link = Link(
+        user_id=user.id,
+        short_code=code,
+        destination_url=destination,
+        expires_at=expires_at,
+        click_limit=click_limit,
+        password_hash=generate_password_hash(link_password, method="scrypt") if link_password else None,
+    )
     db.session.add(link)
     try:
         db.session.commit()
@@ -486,9 +524,9 @@ def disable_link(link_id: str):
     return redirect(url_for("dashboard"))
 
 
-@app.get("/<short_code>")
+@app.route("/<short_code>", methods=["GET", "POST"])
 def redirect_short_link(short_code: str):
-    """Record a visit, then send the visitor to the saved destination."""
+    """Enforce link rules before recording a visit and redirecting."""
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", short_code):
         return render_template("link_error.html", message="That short link was not found."), 404
 
@@ -496,7 +534,28 @@ def redirect_short_link(short_code: str):
     if link is None:
         return render_template("link_error.html", message="That short link was not found."), 404
     if link.status != "active":
-        return render_template("link_error.html", message="This short link is unavailable."), 410
+        return render_template("link_error.html", message="This short link was disabled by an administrator."), 410
+
+    if link.expires_at is not None:
+        expiry = link.expires_at
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expiry:
+            return render_template("link_error.html", message="This short link has expired."), 410
+
+    if link.click_limit is not None and link.click_count >= link.click_limit:
+        return render_template("link_error.html", message="This short link has reached its click limit."), 410
+
+    if link.password_hash:
+        if request.method == "POST":
+            submitted_password = request.form.get("password", "")
+            if not check_password_hash(link.password_hash, submitted_password):
+                return render_template(
+                    "link_password.html", short_code=link.short_code,
+                    error="That password did not match. Try again.",
+                ), 401
+        else:
+            return render_template("link_password.html", short_code=link.short_code, error=None)
 
     destination_url = link.destination_url
     details = visit_details()
