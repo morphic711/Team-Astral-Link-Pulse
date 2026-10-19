@@ -1,79 +1,73 @@
-# LinkPulse
+# LinkPulse: URL Shortener & Analytics Platform
 
-LinkPulse is a Flask URL shortener and campaign-link analytics app backed by Supabase Postgres.
+Tech Geeks Hackathon, Round 2 | Team Astral
 
-## Run locally on Windows
+**Live app:** https://linkpulse-s4uz.onrender.com
+**Repo:** https://github.com/morphic711/Team-Astral-Link-Pulse
 
-1. Install Python 3.14.
-2. Create and activate a virtual environment, then install dependencies:
+> Free hosting sleeps when idle, so the first load can take up to a minute. Please wait and refresh once.
 
-   ```powershell
-   py -3.14 -m venv .venv
-   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-   ```
+## Problem statement
 
-3. Copy `.env.example` to `.env`. Set `DATABASE_URL` to your Supabase Postgres connection string and replace `SECRET_KEY` with a private random value. Keep `.env` private.
-4. Start the local server:
+Long campaign URLs are hard to share and manage, teams can't easily see whether anyone clicks them, and a link sometimes has to be stopped without losing its history.
 
-   ```powershell
-   .\.venv\Scripts\python.exe app.py
-   ```
+## Solution
 
-5. Open `http://127.0.0.1:5000/register` to create an account.
+LinkPulse creates short links, redirects visitors, records every click, and shows per-link analytics. Admins can disable a link while its click history is kept.
 
-The Supabase project must already have the LinkPulse tables (`app_users`, `links`, and `click_events`).
+## Features
 
-## Admin account
+- Accounts with user and admin roles
+- Short links with a generated code or a custom alias, with URL and code validation (the links in the dashboard have a copy option so that user dont have to copy the link manully to share it)
+- HTTP 302 redirects
+- **Link rules: expiry date, click limit and optional password**, checked in this order: disabled, expired, click limit, password
+- Click tracking (time, referrer, device, browser, OS) with hashed visitor IPs and a per-link analytics page
+- Admin-only link disable (HTTP 410, analytics kept)
+- CSV import (`destination_url` required, `short_code` optional; invalid rows and duplicates are skipped)
+- Security: hashed passwords, CSRF protection, user-scoped dashboards
 
-Create an admin account from the project directory:
+**Planned, not built yet:** campaigns and tags, QR codes, unique visitors and charts, bot-filtered reports, rate limiting, domain blocklist, link-in-bio, device targeting, custom domains, public API.
 
-```powershell
-.\.venv\Scripts\flask.exe --app app seed-admin
+
+## Tech stack
+
+Python 3.14, Flask, Jinja2, HTML/CSS, Flask-SQLAlchemy, Flask-WTF, PostgreSQL on Supabase, Gunicorn, Render, Git/GitHub.
+
+## Testing guide for judges
+
+Test logins (user and admin) are in the submission form, not in this public repo. You can also register your own account at `/register`. The test user has three **sample** links (`demo-event`, `demo-launch`, `demo-signup`).
+
+1. Sign in and open the dashboard.
+2. Create a short link (try an invalid URL or a duplicate code to see validation).
+3. Open the short link in a new tab. You are redirected.
+4. Open the link's analytics page. Your click appears.
+5. **Rules:** create a link with a click limit of 1, an expiry date in the past, or a password, then open it.
+   - Expired or limit reached: unavailable page (HTTP 410).
+   - Password: a password form appears; a wrong password is refused, the right one redirects.
+6. Import a CSV with a `destination_url` column. Bad rows and duplicates are skipped with a message.
+7. Sign in as the admin, disable a link, then open it: you get HTTP 410, and its analytics remain.
+
+## Setup
+
+Requires Python 3.14 and a Supabase Postgres database that already has the `app_users`, `links` and `click_events` tables (see the models in `app.py`).
+
+```
+git clone https://github.com/morphic711/Team-Astral-Link-Pulse.git
+cd Team-Astral-Link-Pulse
+py -3.14 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-The command prompts for the email and a hidden password. Admin passwords must be 12–128 characters.
+On macOS/Linux: `python3 -m venv .venv`, `source .venv/bin/activate`, `pip install -r requirements.txt`.
 
-## Sample demo data
+Copy `.env.example` to `.env` and set `DATABASE_URL` (your Supabase connection string) and `SECRET_KEY` (a private random value). Never commit `.env`.
 
-After creating the account that should own the examples, add three sample links and 16 sample visits:
-
-```powershell
-.\.venv\Scripts\flask.exe --app app seed-demo
+```
+.\.venv\Scripts\python.exe app.py
 ```
 
-The command prompts for that account's email. It creates `demo-event`, `demo-launch`, and `demo-signup` links with example.com destinations and synthetic click details. It does not create users or campaigns. Run it only once; it stops without changes if any sample short code already exists.
+Open http://127.0.0.1:5000/register. Optional commands: `flask --app app seed-admin` (create an admin) and `flask --app app seed-demo` (sample data).
 
-## Main routes
+## Deployment
 
-- `/register` and `/login` — account access
-- `/dashboard` — create and manage short links
-- `/<short_code>` — redirect and record a visit
-- `/links/<link_id>/analytics` — per-link activity report
-- `/health/database` — database connection status
-
-## Configuration
-
-The app reads `DATABASE_URL` and `SECRET_KEY` from the environment. Set `SESSION_COOKIE_SECURE=true` when serving over HTTPS. Never commit `.env` or paste its values into chat.
-
-For a Linux host, the included `Procfile` starts the app with Gunicorn. Configure `DATABASE_URL`, `SECRET_KEY`, and `SESSION_COOKIE_SECURE=true` in the hosting provider's private environment settings. The host must be able to reach the Supabase Postgres endpoint.
-
-## Deploy on Render
-
-The root `render.yaml` defines a Free web service in Singapore, uses the `main` branch, and deploys new commits automatically. Create a Render Blueprint from this repository. During the initial setup, enter the Supabase Postgres connection string only in Render's private prompt for `DATABASE_URL`; Render generates `SECRET_KEY` and enables secure session cookies.
-
-## Testing guide
-
-Live app: `<YOUR_RENDER_APP_URL>` (replace this placeholder with the public Render URL; do not add account passwords or secrets to this public README).
-
-Render's free service may take a little while to wake after being idle. Wait for the page to finish loading before testing. The database must be reachable and contain the `app_users`, `links`, and `click_events` tables.
-
-Suggested judge path:
-
-1. Register or sign in with a regular judge account.
-2. Create a short link using a valid `https://` destination, open it, then view its report.
-3. Try an invalid destination and a duplicate short code; both should be rejected.
-4. Import a UTF-8 CSV with `destination_url` and optional `short_code` columns. Include a valid row, an invalid URL, and a duplicate code to see row handling.
-5. Sign in as an admin and disable a link. Opening it should show HTTP 410; its analytics should remain available.
-6. As a regular user, attempting the admin disable action should be rejected with HTTP 403.
-
-Admin accounts are created with `flask --app app seed-admin`. Demo data can be added for an existing account with `flask --app app seed-demo`; it creates three links and 16 synthetic visits and stops if any demo code already exists. These commands change database records, so use the intended judge account and database.
+Deployed on Render Free from the `main` branch (`render.yaml`, `Procfile` with Gunicorn). `DATABASE_URL` and `SECRET_KEY` are set in Render's private environment settings.
