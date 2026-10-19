@@ -253,12 +253,20 @@ h1 em { color: var(--accent); font-family: var(--serif); font-weight: 400; lette
 .link-table td { padding: 15px 16px; border-bottom: 1px solid #e8ece8; color: #40535a; font-size: 11px; vertical-align: top; }
 .link-table tbody tr:last-child td { border-bottom: 0; }
 .link-table { min-width: 850px; }
+.link-table th:first-child, .link-table td:first-child { width: 280px; min-width: 280px; }
 .admin-action-button { padding: 6px 9px; border: 1px solid #d9b8b5; border-radius: 3px; background: transparent; color: var(--danger); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .admin-action-button:hover { background: #f7e9e7; }
 .admin-action-button:focus-visible { outline: 3px solid #d9aaa5; outline-offset: 2px; }
 .short-address { display: flex; align-items: baseline; gap: 1px; color: var(--accent-dark); font-size: 11px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .short-address:hover { text-decoration: underline; text-underline-offset: 3px; }
 .short-address code { color: var(--accent-dark); font: inherit; }
+.short-link-actions { display: grid; grid-template-columns: minmax(0, 1fr) 76px; align-items: center; gap: 12px; }
+.short-link-actions .short-address { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.short-link-actions .short-address code { white-space: normal; overflow-wrap: anywhere; }
+.copy-link-button { justify-self: end; width: 76px; padding: 6px 7px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: var(--accent-dark); font: inherit; font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.copy-link-button:hover { background: #e7ece7; }
+.copy-link-button:focus-visible { outline: 3px solid #70b9a8; outline-offset: 2px; }
+.copy-link-status { display: block; color: var(--accent-dark); font-size: 10px; }
 .entry-state { display: block; margin-top: 6px; color: #82908e; font-size: 7px; letter-spacing: .65px; white-space: nowrap; }
 .destination-link { display: block; max-width: 330px; overflow: hidden; color: #40535a; text-decoration-color: #c1cbc5; text-overflow: ellipsis; white-space: nowrap; }
 .destination-link:hover { color: var(--accent-dark); }

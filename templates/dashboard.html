@@ -77,14 +77,22 @@
     {% if links %}
       <div class="link-table-wrap">
         <table class="link-table">
-          <thead><tr><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th>OWNER</th>{% endif %}<th>CREATED</th><th>VISITS</th><th>REPORT</th>{% if user.role == 'admin' %}<th>ADMIN</th>{% endif %}</tr></thead>
+          <thead><tr><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th>OWNER</th>{% endif %}<th>CREATED</th><th>EXPIRES</th><th>VISITS</th><th>REPORT</th>{% if user.role == 'admin' %}<th>ADMIN</th>{% endif %}</tr></thead>
           <tbody>
             {% for link in links %}
               <tr>
-                  <td><a class="short-address" href="{{ url_for('redirect_short_link', short_code=link.short_code) }}"><span>{{ request.host }}/</span><code>{{ link.short_code }}</code></a><span class="entry-state">{{ 'SAMPLE DATA · ' if link.short_code in sample_codes else '' }}{{ link.status|upper }} · {{ 'HTTP 302' if link.status == 'active' else 'REDIRECT BLOCKED' }}</span></td>
+                  <td>
+                    <div class="short-link-actions">
+                      <a class="short-address" href="{{ url_for('redirect_short_link', short_code=link.short_code) }}"><code>{{ link.short_code }}</code></a>
+                      <button class="copy-link-button" type="button" data-copy-url="{{ url_for('redirect_short_link', short_code=link.short_code, _external=True) }}">Copy link</button>
+                    </div>
+                    <span class="copy-link-status" aria-live="polite"></span>
+                    <span class="entry-state">{{ 'SAMPLE DATA · ' if link.short_code in sample_codes else '' }}{{ link.status|upper }} · {{ 'HTTP 302' if link.status == 'active' else 'REDIRECT BLOCKED' }}</span>
+                  </td>
                 <td><a class="destination-link" href="{{ link.destination_url }}" target="_blank" rel="noopener noreferrer" title="Open destination in a new tab">{{ link.destination_url }}</a></td>
                   {% if user.role == 'admin' %}<td>{{ link.owner.email }}</td>{% endif %}
                 <td class="date-cell">{{ link.created_at.strftime('%b %d, %Y') if link.created_at else 'Just now' }}</td>
+                <td class="date-cell">{{ link.expires_at.strftime('%b %d, %Y') if link.expires_at else 'Never' }}</td>
                 <td class="visits-cell">{{ link.click_count }}</td>
                 <td><a class="report-link" href="{{ url_for('link_analytics', link_id=link.id) }}">View report <span aria-hidden="true">↗</span></a></td>
                   {% if user.role == 'admin' %}
@@ -103,4 +111,17 @@
     {% endif %}
   </section>
 </section>
+<script>
+  document.querySelectorAll(".copy-link-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copyUrl);
+        button.textContent = "Copied";
+        button.nextElementSibling.textContent = "Link is shareable now.";
+      } catch (error) {
+        button.nextElementSibling.textContent = "Could not copy. Open the short link and copy its address.";
+      }
+    });
+  });
+</script>
 {% endblock %}

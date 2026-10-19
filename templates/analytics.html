@@ -16,8 +16,8 @@
   <div class="metrics-row" aria-label="Link summary">
     <article class="metric-card">
       <p class="eyebrow">TOTAL VISITS</p>
-      <p class="metric-value">{{ link.click_count }}</p>
-      <p class="metric-caption">All tracked requests for this link</p>
+      <p class="metric-value">{{ link.click_count }}{% if link.click_limit is not none %} / {{ link.click_limit }}{% endif %}</p>
+      <p class="metric-caption">{% if link.click_limit is not none %}{{ [link.click_limit - link.click_count, 0]|max }} clicks left · {{ link.click_limit }} total clicks allowed{% else %}All tracked requests for this link · No click limit{% endif %}</p>
     </article>
     <article class="metric-card metric-destination">
       <p class="eyebrow">DESTINATION</p>
