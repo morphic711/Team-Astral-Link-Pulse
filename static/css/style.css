@@ -583,7 +583,8 @@ body:has(.dashboard-page) .wordmark-light { color: var(--accent); }
 .dashboard-page .options-grid { gap: 14px; padding: 11px 10px 2px; }
 .dashboard-page .options-column { gap: 2px; }
 .dashboard-page .link-form .primary-button { min-width: 205px; min-height: 54px; margin-top: 8px; padding: 0 22px; border-color: var(--accent-dark); border-radius: 4px; background: linear-gradient(135deg, #08624d 0%, var(--accent-dark) 68%, #064b3b 100%); box-shadow: 0 5px 13px rgb(7 84 67 / 20%), 0 0 0 1px rgb(8 120 93 / 5%); font-size: 13px; font-weight: 750; transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
-.dashboard-page .link-form .primary-button:hover { border-color: #043f32; background: linear-gradient(135deg, #075743 0%, #043f32 72%, #033b30 100%); box-shadow: 0 8px 18px rgb(7 84 67 / 25%), 0 0 18px rgb(8 120 93 / 10%); }
+.dashboard-page .link-form .primary-button { transition-duration: .22s; }
+.dashboard-page .link-form .primary-button:hover { border-color: #043f32; background: linear-gradient(135deg, #075743 0%, #043f32 72%, #033b30 100%); box-shadow: 0 8px 18px rgb(7 84 67 / 25%), 0 0 18px rgb(8 120 93 / 10%); transform: translateY(-1px) scale(1.015); }
 .dashboard-page .link-form .primary-button:focus-visible, .dashboard-page .form-options > summary:focus-visible, .dashboard-page .workspace-nav a:focus-visible { outline: 3px solid #3b9d7c; outline-offset: 3px; }
 .dashboard-page .link-form .primary-button span { font-size: 18px; }
 
@@ -684,13 +685,13 @@ body:has(.dashboard-page) .topbar {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+  transition: background-color .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease, transform .22s ease;
 }
 .dashboard-page .copy-link-button svg { width: 12px; height: 12px; flex: none; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
 .dashboard-page .copy-link-button:hover { border-color: #b8cbc2; background: #edf3ef; color: #064d3c; box-shadow: 0 2px 6px rgb(7 84 67 / 8%); transform: translateY(-1px); }
 .dashboard-page .admin-action-button {
   border-color: #e1c5c2;
-  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+  transition: background-color .22s ease, border-color .22s ease, color .22s ease;
 }
 .dashboard-page .admin-action-button:hover { border-color: var(--danger); background: var(--danger); color: #fff; }
 
@@ -720,4 +721,43 @@ body:has(.dashboard-page) .topbar {
   .dashboard-page .workspace-heading h1 { font-size: clamp(32px, 7vw, 42px); line-height: 1.06; letter-spacing: -1.8px; }
   .headline-ecg { width: 132px; height: 18px; margin: 6px 0 4px; }
   .dashboard-page .workspace-heading > div:first-child::before { top: -35px; left: -20px; height: 160px; }
+}
+
+/* Quiet motion that reinforces the pulse motif without moving page content. */
+@keyframes headline-ecg-draw {
+  from { stroke-dashoffset: 190; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pulse-breathe {
+  0%, 100% { opacity: .62; transform: scale(1); }
+  50% { opacity: .88; transform: scale(1.035); }
+}
+.headline-ecg path {
+  stroke-dasharray: 190;
+  stroke-dashoffset: 190;
+  animation: headline-ecg-draw .85s cubic-bezier(.16, 1, .3, 1) .08s both;
+}
+.dashboard-page .note-pulse-icon,
+.dashboard-page .workbench-mark svg,
+.dashboard-page .links-title-pulse {
+  transform-origin: center;
+  animation: pulse-breathe 4.2s ease-in-out infinite;
+}
+.dashboard-page button,
+.dashboard-page a,
+.dashboard-page select,
+.dashboard-page summary {
+  transition-duration: .22s;
+  transition-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .headline-ecg path { animation: none; stroke-dashoffset: 0; }
+  .dashboard-page .note-pulse-icon,
+  .dashboard-page .workbench-mark svg,
+  .dashboard-page .links-title-pulse { animation: none; transform: none; }
+  .dashboard-page button,
+  .dashboard-page a,
+  .dashboard-page select,
+  .dashboard-page summary { transition-duration: .01ms !important; }
 }
