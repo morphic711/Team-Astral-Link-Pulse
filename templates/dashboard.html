@@ -105,7 +105,7 @@
     <div class="list-heading">
       <div>
       <p class="eyebrow">{{ 'PLATFORM LINKS' if user.role == 'admin' else 'YOUR LINKS' }} <span class="eyebrow-rule"></span> LINK REGISTER</p>
-        <h2 id="links-title">{{ 'All links' if user.role == 'admin' else 'Your links' }} <span class="item-count">{{ links|length }}</span></h2>
+        <h2 id="links-title"><svg class="links-title-pulse" aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12h4l2.2-6 4.1 12 2.4-6h6.3"></path></svg>{{ 'All links' if user.role == 'admin' else 'Your links' }} <span class="item-count">{{ links|length }}</span></h2>
       </div>
       <span class="list-note">NEWEST FIRST</span>
     </div>
@@ -146,7 +146,7 @@
                   <td data-label="Short link">
                     <div class="short-link-actions">
                       <a class="short-address" href="{{ url_for('redirect_short_link', short_code=link.short_code) }}"><code>{{ link.short_code }}</code></a>
-                      <button class="copy-link-button" type="button" data-copy-url="{{ url_for('redirect_short_link', short_code=link.short_code, _external=True) }}">Copy link</button>
+                      <button class="copy-link-button" type="button" data-copy-url="{{ url_for('redirect_short_link', short_code=link.short_code, _external=True) }}"><svg aria-hidden="true" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="9" rx="1"></rect><path d="M10.5 5.5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2.5"></path></svg><span>Copy link</span></button>
                     </div>
                     <span class="copy-link-status" aria-live="polite"></span>
                     <span class="entry-state">{{ 'SAMPLE DATA · ' if link.short_code in sample_codes else '' }}{{ link.status|upper }} · {{ 'HTTP 302' if link.status == 'active' else 'REDIRECT BLOCKED' }}</span>
