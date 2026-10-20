@@ -2,7 +2,7 @@
 {% block title %}Link report · LinkPulse{% endblock %}
 {% block content %}
 <section class="workspace-page analytics-page" aria-labelledby="page-title">
-  <a class="back-link" href="{{ url_for('dashboard') }}">← Back to campaign links</a>
+  <a class="back-link" href="{{ url_for('dashboard') }}">← Back to all links</a>
 
   <div class="workspace-heading analytics-heading">
     <div>
@@ -43,7 +43,7 @@
     {% if recent_clicks %}
       <div class="link-table-wrap">
         <table class="event-table">
-          <thead><tr><th>TIME</th><th>VISIT SOURCE</th><th>DEVICE</th><th>BROWSER / OS</th><th>REFERRER</th></tr></thead>
+          <thead><tr><th>TIME (UTC)</th><th>VISIT SOURCE</th><th>DEVICE</th><th>BROWSER / OS</th><th>REFERRER</th></tr></thead>
           <tbody>
             {% for click in recent_clicks %}
               <tr>
