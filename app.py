@@ -419,22 +419,22 @@ def import_links():
     upload = request.files.get("csv_file")
     if upload is None or not upload.filename:
         flash("Choose a CSV file to import.", "error")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard", _anchor="link-import"))
     contents = upload.read(2_000_001)
     if len(contents) > 2_000_000:
         flash("CSV files must be 2 MB or smaller.", "error")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard", _anchor="link-import"))
     try:
         text_content = contents.decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(text_content, newline=""))
     except (UnicodeDecodeError, csv.Error):
         flash("Could not read that file. Save it as a UTF-8 CSV and try again.", "error")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard", _anchor="link-import"))
 
     headers = {header.strip().lower() for header in (reader.fieldnames or []) if header}
     if "destination_url" not in headers:
         flash("CSV needs a destination_url column. short_code is optional.", "error")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard", _anchor="link-import"))
 
     reserved_codes = {"admin", "api", "dashboard", "health", "login", "logout", "register", "static"}
     imported = 0
@@ -486,7 +486,7 @@ def import_links():
         flash(f"Imported {imported} link(s). {detail}", "error" if not imported else "success")
     else:
         flash(f"Imported {imported} link(s).", "success")
-    return redirect(url_for("dashboard"))
+    return redirect(url_for("dashboard", _anchor="link-import"))
 
 
 @app.post("/admin/links/<link_id>/disable")
