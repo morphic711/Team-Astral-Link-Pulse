@@ -37,8 +37,8 @@
     <form class="link-form" method="post" action="{{ url_for('create_link') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-field form-field-wide"><label for="destination-url">Destination URL</label>
-        <input id="destination-url" name="destination_url" type="url" maxlength="2048" placeholder="https://your-site.com/campaign" required>
-        <p class="field-hint">Use the full web address, including https://. We’ll check that it looks valid before saving.</p>
+        <input id="destination-url" name="destination_url" type="text" inputmode="url" autocomplete="url" autocapitalize="none" maxlength="2048" placeholder="google.com or https://your-site.com/campaign" required>
+        <p class="field-hint">You can leave out https://. We'll add it and check the address.</p>
       </div>
 
       <details class="form-options form-field-wide" id="link-options">
