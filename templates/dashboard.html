@@ -153,13 +153,13 @@
                     <span class="entry-state">{{ 'SAMPLE DATA · ' if link.short_code in sample_codes else '' }}{{ link.status|upper }} · {{ 'HTTP 302' if link.status == 'active' else 'REDIRECT BLOCKED' }}</span>
                   </td>
                 <td data-label="Destination"><a class="destination-link" href="{{ link.destination_url }}" target="_blank" rel="noopener noreferrer" title="{{ link.destination_url }}">{{ link.destination_url }}</a></td>
-                  {% if user.role == 'admin' %}<td class="col-owner" data-label="Owner">{{ link.owner.email }}</td>{% endif %}
+                  {% if user.role == 'admin' %}<td class="col-owner" data-label="Owner" title="{{ link.owner.email.split('@')[0] }}"><span class="owner-name">{{ link.owner.email.split('@')[0] }}</span></td>{% endif %}
                 <td class="date-cell col-created" data-label="Created">{{ link.created_at.strftime('%b %d, %Y') if link.created_at else 'Just now' }}</td>
                 <td class="date-cell col-expiry" data-label="Expires">{{ link.expires_at.strftime('%b %d, %Y') if link.expires_at else 'Never' }}</td>
                 <td class="visits-cell col-visits" data-label="Visits">{{ link.click_count }}</td>
                 <td class="col-report" data-label="Report"><a class="report-link" href="{{ url_for('link_analytics', link_id=link.id) }}">View report <span aria-hidden="true">↗</span></a></td>
                   {% if user.role == 'admin' %}
-                    <td class="col-actions" data-label="Actions">{% if link.status == 'active' %}<form method="post" action="{{ url_for('disable_link', link_id=link.id) }}" onsubmit="return confirm('Disable this link? Its short address will stop redirecting, but its analytics will remain.');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="admin-action-button" type="submit" title="Disable link">Disable</button></form>{% else %}<span class="entry-state">DISABLED</span>{% endif %}</td>
+                    <td class="col-actions" data-label="Actions">{% if link.status == 'active' %}<form method="post" action="{{ url_for('disable_link', link_id=link.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="admin-action-button" type="submit" title="Disable link">Disable</button></form>{% else %}<span class="entry-state">DISABLED</span>{% endif %}</td>
                   {% endif %}
               </tr>
             {% endfor %}
@@ -303,14 +303,31 @@
     });
     rowCheckboxes.forEach((checkbox) => checkbox.addEventListener("change", updateSelectionState));
     bulkSelect.addEventListener("change", updateSelectionState);
-    bulkForm.addEventListener("submit", (event) => {
-      const selectedAction = bulkSelect.value;
-      if (!selectedAction) event.preventDefault();
-      if (selectedAction === "delete" && !confirm("Delete selected links and permanently remove their analytics?")) event.preventDefault();
-      if (selectedAction === "disable" && !confirm("Disable the selected links? Their analytics will remain available.")) event.preventDefault();
-    });
     updateVisibleRows();
   }
+
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    if (form.id === "bulk-actions-form") {
+      const action = form.querySelector("#bulk-action")?.value;
+      if (!action) {
+        event.preventDefault();
+        return;
+      }
+      if (action === "delete" && !confirm("Delete selected links and permanently remove their analytics?")) {
+        event.preventDefault();
+      } else if (action === "disable" && !confirm("Disable the selected links?")) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (form.querySelector(".admin-action-button") && !confirm("Disable this link? Visitors will see an unavailable page, but its analytics will be kept.")) {
+      event.preventDefault();
+    }
+  });
 </script>
 <script>
   const workspaceNavLinks = [...document.querySelectorAll(".workspace-nav a[href^='#']")];

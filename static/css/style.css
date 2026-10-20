@@ -362,7 +362,8 @@ h1 em { color: var(--accent); font-family: var(--serif); font-weight: 400; lette
 .link-table .col-visits { width: 58px; }
 .link-table .col-expiry { width: 96px; }
 .link-table .col-created { width: 94px; }
-.link-table .col-owner { width: 145px; }
+.link-table .col-owner { width: 145px; max-width: 145px; }
+.link-table .owner-name { display: block; max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-action-button { padding: 6px 8px; border: 1px solid #d9b8b5; border-radius: 3px; background: transparent; color: var(--danger); font: inherit; font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .admin-action-button:hover { background: #f7e9e7; }
 .admin-action-button:focus-visible { outline: 3px solid #d9aaa5; outline-offset: 2px; }
