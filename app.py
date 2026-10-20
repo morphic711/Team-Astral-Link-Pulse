@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import hmac
+import ipaddress
 from datetime import datetime, timedelta, timezone
 import io
 import os
@@ -158,6 +159,56 @@ def generate_short_code() -> str:
         if not db.session.query(Link.id).filter_by(short_code=code).first():
             return code
     raise RuntimeError("Could not find an unused short code.")
+
+
+def normalize_destination_url(value: str) -> tuple[str, bool]:
+    """Trim a destination and add HTTPS when the user omitted a scheme."""
+    destination = value.strip()
+    added_scheme = bool(destination) and "://" not in destination
+    if added_scheme:
+        destination = f"https://{destination}"
+    return destination, added_scheme
+
+
+def is_valid_destination_url(destination: str, require_domain: bool = False) -> bool:
+    """Apply the existing HTTP(S) checks, optionally rejecting bare host words."""
+    if not destination or len(destination) > 2048:
+        return False
+
+    try:
+        parsed_url = urlsplit(destination)
+        hostname = parsed_url.hostname
+        parsed_url.port  # Accessing this also rejects invalid port numbers.
+    except ValueError:
+        return False
+
+    if (
+        parsed_url.scheme.lower() not in {"http", "https"}
+        or not hostname
+        or any(character.isspace() for character in destination)
+        or parsed_url.username is not None
+        or parsed_url.password is not None
+    ):
+        return False
+
+    if require_domain:
+        try:
+            ipaddress.ip_address(hostname)
+        except ValueError:
+            try:
+                ascii_hostname = hostname.encode("idna").decode("ascii")
+            except UnicodeError:
+                return False
+            if ascii_hostname.endswith("."):
+                ascii_hostname = ascii_hostname[:-1]
+            labels = ascii_hostname.split(".")
+            if len(ascii_hostname) > 253 or len(labels) < 2:
+                return False
+            label_pattern = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+            if any(len(label) > 63 or not re.fullmatch(label_pattern, label) for label in labels):
+                return False
+
+    return True
 
 
 def visit_details() -> dict:
@@ -322,7 +373,7 @@ def create_link():
         flash("Sign in before creating a link.", "error")
         return redirect(url_for("login"))
 
-    destination = request.form.get("destination_url", "").strip()
+    destination, added_scheme = normalize_destination_url(request.form.get("destination_url", ""))
     requested_code = request.form.get("short_code", "").strip()
     expiry_date = request.form.get("expires_at", "").strip()
     click_limit_value = request.form.get("click_limit", "").strip()
@@ -353,26 +404,8 @@ def create_link():
         flash("Link passwords must be 128 characters or fewer.", "error")
         return redirect(url_for("dashboard"))
 
-    if not destination or len(destination) > 2048:
-        flash("Enter a destination URL up to 2,048 characters long.", "error")
-        return redirect(url_for("dashboard"))
-
-    try:
-        parsed_url = urlsplit(destination)
-        hostname = parsed_url.hostname
-        parsed_url.port  # Accessing this also rejects invalid port numbers.
-    except ValueError:
-        flash("Use a valid web address that starts with http:// or https://.", "error")
-        return redirect(url_for("dashboard"))
-
-    if (
-        parsed_url.scheme.lower() not in {"http", "https"}
-        or not hostname
-        or any(character.isspace() for character in destination)
-        or parsed_url.username is not None
-        or parsed_url.password is not None
-    ):
-        flash("Use a valid web address that starts with http:// or https://.", "error")
+    if not is_valid_destination_url(destination, require_domain=added_scheme):
+        flash("Enter a valid HTTP or HTTPS address, such as example.com.", "error")
         return redirect(url_for("dashboard"))
 
     reserved_codes = {"admin", "api", "dashboard", "health", "login", "logout", "register", "static"}
@@ -403,7 +436,7 @@ def create_link():
         db.session.rollback()
         flash("That short code was just claimed. Choose another one and try again.", "error")
     else:
-        flash("Your short link has been created.", "success")
+        flash(f"Your short link has been created: {destination}", "success")
 
     return redirect(url_for("dashboard"))
 
@@ -444,21 +477,9 @@ def import_links():
             errors.append("Only the first 500 data rows were processed.")
             break
         normalized = {(key or "").strip().lower(): (value or "").strip() for key, value in row.items() if key}
-        destination = normalized.get("destination_url", "")
+        destination, added_scheme = normalize_destination_url(normalized.get("destination_url", ""))
         requested_code = normalized.get("short_code", "")
-        try:
-            parsed_url = urlsplit(destination)
-            hostname = parsed_url.hostname
-            parsed_url.port
-            valid_url = (
-                bool(destination) and len(destination) <= 2048
-                and parsed_url.scheme.lower() in {"http", "https"} and bool(hostname)
-                and not any(character.isspace() for character in destination)
-                and parsed_url.username is None and parsed_url.password is None
-            )
-        except ValueError:
-            valid_url = False
-        if not valid_url:
+        if not is_valid_destination_url(destination, require_domain=added_scheme):
             errors.append(f"Row {row_number}: invalid destination_url.")
             continue
         if requested_code and (
