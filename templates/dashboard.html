@@ -70,7 +70,7 @@
     </form>
   </section>
 
-  <details class="csv-import csv-import-collapsible" id="link-import" {% if not links %}open{% endif %}>
+  <details class="csv-import csv-import-collapsible" id="link-import">
     <summary class="csv-import-toggle" aria-controls="csv-import-content">
       <span>
         <span class="eyebrow">BULK ADD <span class="eyebrow-rule"></span> CSV</span>
@@ -352,8 +352,7 @@
   window.addEventListener("scroll", updateWorkspaceNavigation, { passive: true });
   window.addEventListener("resize", updateWorkspaceNavigation);
   window.addEventListener("hashchange", openImportPanelForHash);
-  window.addEventListener("pageshow", openImportPanelForHash);
-  openImportPanelForHash();
+  if (window.location.hash === "#link-import") openImportPanelForHash();
   updateWorkspaceNavigation();
 </script>
 {% endblock %}
