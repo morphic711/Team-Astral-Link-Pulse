@@ -663,3 +663,32 @@ body:has(.dashboard-page) .topbar {
   .dashboard-page #link-import,
   .dashboard-page #links-title { scroll-margin-top: 78px; }
 }
+
+/* Small dashboard polish: tighter form rhythm and clearer link actions. */
+.dashboard-page .form-field-wide .field-hint { margin-bottom: 3px; }
+.dashboard-page .links-title-pulse {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-right: -4px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  opacity: .68;
+}
+.dashboard-page .copy-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.dashboard-page .copy-link-button svg { width: 12px; height: 12px; flex: none; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
+.dashboard-page .copy-link-button:hover { border-color: #b8cbc2; background: #edf3ef; color: #064d3c; }
+.dashboard-page .admin-action-button {
+  border-color: #e1c5c2;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.dashboard-page .admin-action-button:hover { border-color: var(--danger); background: var(--danger); color: #fff; }
