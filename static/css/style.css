@@ -599,3 +599,67 @@ body:has(.dashboard-page) .wordmark-light { color: var(--accent); }
   .builder-steps > span { min-width: 0; flex-direction: column; align-items: flex-start; white-space: normal; line-height: 1.35; }
   .builder-step-connector { align-self: start; width: auto; min-width: 10px; margin-top: 11px; }
 }
+
+/* Keep the dashboard section navigation alongside long link lists. */
+html:has(.dashboard-page) { scroll-behavior: smooth; }
+body:has(.dashboard-page) .topbar {
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  background: var(--paper);
+}
+.dashboard-page { align-items: start; }
+.dashboard-page .workspace-rail {
+  position: sticky;
+  top: 74px;
+  z-index: 5;
+  align-self: start;
+  height: calc(100vh - 74px);
+  height: calc(100dvh - 74px);
+  min-height: 0;
+  max-height: calc(100vh - 74px);
+  max-height: calc(100dvh - 74px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dashboard-page #link-builder,
+.dashboard-page #link-import,
+.dashboard-page #links-title { scroll-margin-top: 90px; }
+
+@media (max-width: 760px) {
+  html:has(.dashboard-page) { scroll-behavior: smooth; }
+  .dashboard-page { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-page .workspace-rail {
+    position: static;
+    z-index: auto;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 10px 12px;
+  }
+  .dashboard-page .workspace-rail > .eyebrow,
+  .dashboard-page .workspace-rail-account { display: none; }
+  .dashboard-page .workspace-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0;
+  }
+  .dashboard-page .workspace-nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 9px 10px;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    font-size: 11px;
+  }
+  .dashboard-page .workspace-nav a:hover,
+  .dashboard-page .workspace-nav a:focus-visible,
+  .dashboard-page .workspace-nav a[aria-current="location"] { border-left-color: transparent; }
+  .dashboard-page .workspace-nav a:hover,
+  .dashboard-page .workspace-nav a:focus-visible { border-bottom-color: var(--accent); }
+  .dashboard-page .workspace-nav a[aria-current="location"] { border-bottom-color: var(--accent); }
+  .dashboard-page #link-builder,
+  .dashboard-page #link-import,
+  .dashboard-page #links-title { scroll-margin-top: 78px; }
+}
