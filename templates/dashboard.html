@@ -7,7 +7,7 @@
     <nav class="workspace-nav">
       <a href="#link-builder" aria-current="location">Create link</a>
       <a href="#link-import">Import CSV</a>
-      <a href="#links-title">Campaign links</a>
+      <a href="#links-title">{{ 'All links' if user.role == 'admin' else 'Your links' }}</a>
     </nav>
   </aside>
   <div class="dashboard-content">
@@ -74,7 +74,7 @@
     <summary class="csv-import-toggle" aria-controls="csv-import-content">
       <span>
         <span class="eyebrow">BULK ADD <span class="eyebrow-rule"></span> CSV</span>
-        <span class="csv-import-title" id="csv-import-title">Import campaign links</span>
+        <span class="csv-import-title" id="csv-import-title">Import links from CSV</span>
       </span>
       <span class="import-toggle-label">{{ 'Add links from a CSV' if links else 'CSV import options' }} <span class="import-toggle-icon" aria-hidden="true">⌄</span></span>
     </summary>
@@ -96,18 +96,44 @@
     <div class="list-heading">
       <div>
       <p class="eyebrow">{{ 'PLATFORM LINKS' if user.role == 'admin' else 'YOUR LINKS' }} <span class="eyebrow-rule"></span> LINK REGISTER</p>
-        <h2 id="links-title">Campaign links <span class="item-count">{{ links|length }}</span></h2>
+        <h2 id="links-title">{{ 'All links' if user.role == 'admin' else 'Your links' }} <span class="item-count">{{ links|length }}</span></h2>
       </div>
       <span class="list-note">NEWEST FIRST</span>
     </div>
 
     {% if links %}
+      <div class="links-toolbar" aria-label="Link list tools">
+        <label class="link-search">
+          <svg aria-hidden="true" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m13 13 4 4"></path></svg>
+          <input id="link-search" type="search" placeholder="Search short codes or destinations…" autocomplete="off" aria-label="Search short codes or destinations">
+        </label>
+        <div class="status-filters" role="group" aria-label="Filter links by status">
+          <button type="button" class="status-filter is-active" data-status="all" aria-pressed="true">All</button>
+          <button type="button" class="status-filter" data-status="active" aria-pressed="false">Active</button>
+          <button type="button" class="status-filter" data-status="expired" aria-pressed="false">Expired</button>
+          <button type="button" class="status-filter" data-status="disabled" aria-pressed="false">Disabled</button>
+        </div>
+        <form class="bulk-actions" method="post" action="{{ url_for('bulk_manage_links') }}" id="bulk-actions-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="visually-hidden" for="bulk-action">Bulk actions</label>
+          <select id="bulk-action" name="action" disabled>
+            <option value="">Bulk actions</option>
+            <option value="disable">Disable selected</option>
+            <option value="enable">Enable selected</option>
+            <option value="delete">Delete selected</option>
+          </select>
+          <button class="bulk-apply" type="submit" disabled>Apply</button>
+        </form>
+      </div>
       <div class="link-table-wrap">
         <table class="link-table">
-          <thead><tr><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th class="col-owner">OWNER</th>{% endif %}<th class="col-created">CREATED</th><th class="col-expiry">EXPIRES</th><th class="col-visits">VISITS</th><th class="col-report">REPORT</th>{% if user.role == 'admin' %}<th class="col-actions">ACTIONS</th>{% endif %}</tr></thead>
+          <thead><tr><th class="col-select"><input id="select-visible-links" class="row-checkbox" type="checkbox" aria-label="Select all visible links"></th><th>SHORT ADDRESS</th><th>DESTINATION</th>{% if user.role == 'admin' %}<th class="col-owner">OWNER</th>{% endif %}<th class="col-created">CREATED</th><th class="col-expiry">EXPIRES</th><th class="col-visits">VISITS</th><th class="col-report">REPORT</th>{% if user.role == 'admin' %}<th class="col-actions">ACTIONS</th>{% endif %}</tr></thead>
           <tbody>
             {% for link in links %}
-              <tr>
+              {% set link_expired = link.expires_at and link.expires_at <= now_utc %}
+              {% set link_filter_status = 'disabled' if link.status == 'disabled' else ('expired' if link_expired else 'active') %}
+              <tr data-link-row data-status="{{ link_filter_status }}" data-search="{{ (link.short_code ~ ' ' ~ link.destination_url ~ ' ' ~ (link.owner.email if user.role == 'admin' else ''))|lower }}">
+                <td class="col-select" data-label="Select"><input class="row-checkbox link-row-checkbox" type="checkbox" name="link_ids" value="{{ link.id }}" form="bulk-actions-form" aria-label="Select {{ link.short_code }}"></td>
                   <td data-label="Short link">
                     <div class="short-link-actions">
                       <a class="short-address" href="{{ url_for('redirect_short_link', short_code=link.short_code) }}"><code>{{ link.short_code }}</code></a>
@@ -127,13 +153,14 @@
                   {% endif %}
               </tr>
             {% endfor %}
+            <tr class="no-matching-links" hidden><td colspan="{{ 9 if user.role == 'admin' else 7 }}">No links match your search or status filter.</td></tr>
           </tbody>
         </table>
       </div>
     {% else %}
       <div class="links-empty">
         <div class="empty-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p>No campaign links yet. Create a short link or import a CSV to get started.</p>
+        <p>No links yet. Create a short link or import a CSV to get started.</p>
         <div class="empty-actions"><a class="primary-button" href="#link-builder">Create your first link <span aria-hidden="true">↗</span></a><a class="empty-import-link" href="#link-import">Import CSV</a></div>
       </div>
     {% endif %}
@@ -152,6 +179,67 @@
       }
     });
   });
+</script>
+<script>
+  const linkRows = [...document.querySelectorAll("[data-link-row]")];
+  if (linkRows.length) {
+    const searchInput = document.querySelector("#link-search");
+    const filterButtons = [...document.querySelectorAll(".status-filter")];
+    const selectVisible = document.querySelector("#select-visible-links");
+    const rowCheckboxes = [...document.querySelectorAll(".link-row-checkbox")];
+    const bulkForm = document.querySelector("#bulk-actions-form");
+    const bulkSelect = document.querySelector("#bulk-action");
+    const bulkApply = bulkForm.querySelector(".bulk-apply");
+    const emptyMatchRow = document.querySelector(".no-matching-links");
+    let activeStatus = "all";
+
+    function updateVisibleRows() {
+      const query = searchInput.value.trim().toLowerCase();
+      linkRows.forEach((row) => {
+        const matchesSearch = row.dataset.search.includes(query);
+        const matchesStatus = activeStatus === "all" || row.dataset.status === activeStatus;
+        row.hidden = !(matchesSearch && matchesStatus);
+      });
+      emptyMatchRow.hidden = linkRows.some((row) => !row.hidden);
+      updateSelectionState();
+    }
+
+    function updateSelectionState() {
+      const selected = rowCheckboxes.filter((checkbox) => checkbox.checked);
+      const visibleCheckboxes = rowCheckboxes.filter((checkbox) => !checkbox.closest("tr").hidden);
+      const selectedVisible = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+      selectVisible.checked = visibleCheckboxes.length > 0 && selectedVisible === visibleCheckboxes.length;
+      selectVisible.indeterminate = selectedVisible > 0 && selectedVisible < visibleCheckboxes.length;
+      bulkSelect.disabled = selected.length === 0;
+      bulkApply.disabled = selected.length === 0 || !bulkSelect.value;
+    }
+
+    searchInput.addEventListener("input", updateVisibleRows);
+    filterButtons.forEach((button) => button.addEventListener("click", () => {
+      activeStatus = button.dataset.status;
+      filterButtons.forEach((candidate) => {
+        const selected = candidate === button;
+        candidate.classList.toggle("is-active", selected);
+        candidate.setAttribute("aria-pressed", String(selected));
+      });
+      updateVisibleRows();
+    }));
+    selectVisible.addEventListener("change", () => {
+      rowCheckboxes.forEach((checkbox) => {
+        if (!checkbox.closest("tr").hidden) checkbox.checked = selectVisible.checked;
+      });
+      updateSelectionState();
+    });
+    rowCheckboxes.forEach((checkbox) => checkbox.addEventListener("change", updateSelectionState));
+    bulkSelect.addEventListener("change", updateSelectionState);
+    bulkForm.addEventListener("submit", (event) => {
+      const selectedAction = bulkSelect.value;
+      if (!selectedAction) event.preventDefault();
+      if (selectedAction === "delete" && !confirm("Delete selected links and permanently remove their analytics?")) event.preventDefault();
+      if (selectedAction === "disable" && !confirm("Disable the selected links? Their analytics will remain available.")) event.preventDefault();
+    });
+    updateVisibleRows();
+  }
 </script>
 <script>
   const workspaceNavLinks = [...document.querySelectorAll(".workspace-nav a[href^='#']")];

@@ -310,6 +310,7 @@ def dashboard():
     return render_template(
         "dashboard.html", user=user, links=links, sample_codes=sample_codes,
         today_utc=datetime.now(timezone.utc).date().isoformat(),
+        now_utc=datetime.now(timezone.utc),
     )
 
 
@@ -520,6 +521,66 @@ def disable_link(link_id: str):
         flash("The link could not be disabled. Please try again.", "error")
     else:
         flash("Link disabled. Its analytics remain available.", "success")
+
+    return redirect(url_for("dashboard"))
+
+
+@app.post("/links/bulk")
+def bulk_manage_links():
+    """Apply a requested management action to selected links the user may manage."""
+    user = get_logged_in_user()
+    if user is None:
+        flash("Sign in before managing links.", "error")
+        return redirect(url_for("login"))
+
+    action = request.form.get("action", "")
+    if action not in {"disable", "enable", "delete"}:
+        flash("Choose a bulk action first.", "error")
+        return redirect(url_for("dashboard"))
+
+    raw_link_ids = request.form.getlist("link_ids")
+    try:
+        link_ids = {PythonUUID(link_id) for link_id in raw_link_ids}
+    except ValueError:
+        abort(400)
+    if not link_ids:
+        flash("Select at least one link.", "error")
+        return redirect(url_for("dashboard"))
+
+    links_query = Link.query.filter(Link.id.in_(link_ids))
+    if user.role != "admin":
+        links_query = links_query.filter_by(user_id=user.id)
+    links = links_query.all()
+    if len(links) != len(link_ids):
+        abort(403)
+
+    try:
+        if action == "delete":
+            ClickEvent.query.filter(ClickEvent.link_id.in_(link_ids)).delete(synchronize_session=False)
+            Link.query.filter(Link.id.in_(link_ids)).delete(synchronize_session=False)
+            success_message = f"Deleted {len(links)} link(s) and their analytics."
+        elif action == "disable":
+            changed = 0
+            for link in links:
+                if link.status != "disabled":
+                    link.status = "disabled"
+                    link.disabled_reason = (
+                        "Disabled in bulk by an administrator"
+                        if user.role == "admin" else "Disabled in bulk by the link owner"
+                    )
+                    changed += 1
+            success_message = f"Disabled {changed} link(s). Their analytics remain available."
+        else:
+            for link in links:
+                link.status = "active"
+                link.disabled_reason = None
+            success_message = f"Enabled {len(links)} link(s)."
+        db.session.commit()
+        flash(success_message, "success")
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not apply bulk action %s to selected links.", action)
+        flash("The selected links could not be updated. Please try again.", "error")
 
     return redirect(url_for("dashboard"))
 
