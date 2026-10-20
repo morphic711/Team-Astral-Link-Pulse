@@ -13,23 +13,23 @@
   <div class="dashboard-content">
   <div class="workspace-heading">
     <div>
-      <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR CAMPAIGN DESK <span class="eyebrow-rule"></span> WORKSPACE</p>
-      <h1 id="page-title">Good to have you, <em>{{ user.email.split('@')[0] }}</em>.</h1>
+      <p class="eyebrow"><span class="eyebrow-dot"></span> WELCOME BACK, {{ user.email.split('@')[0] }} <span class="eyebrow-rule"></span> WORKSPACE</p>
+      <h1 id="page-title">Your links, ready for <em>pulse</em>.</h1>
       <p class="intro-copy">Create and keep your campaign links together in one place. Start by entering a full web address below.</p>
     </div>
   </div>
 
-  <div class="redirect-note"><span class="eyebrow-dot"></span><p>Open any short address to redirect to its destination. Visits are recorded with a privacy-preserving IP hash.</p></div>
+  <div class="redirect-note"><svg class="note-pulse-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12h4l2.2-6 4.1 12 2.4-6h6.3"></path></svg><p>Open any short address to redirect to its destination. Visits are recorded with a privacy-preserving IP hash.</p></div>
 
   <section class="link-builder" id="link-builder" aria-labelledby="builder-title">
     <div class="builder-intro">
       <div>
-        <p class="eyebrow">LINK WORKBENCH <span class="eyebrow-rule"></span> 01</p>
+        <p class="eyebrow"><span class="workbench-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12h4l2.2-6 4.1 12 2.4-6h6.3"></path></svg></span> LINK WORKBENCH <span class="eyebrow-rule"></span> 01</p>
         <h2 id="builder-title">Create a short link</h2>
         <p>Set a destination and optional rules. Your link is ready as soon as you create it.</p>
       </div>
       <div class="builder-steps" aria-label="How it works">
-        <span><b>1</b> Add destination</span><span><b>2</b> Set options</span><span><b>3</b> Share your link</span>
+        <span><b>1</b> Add destination</span><i class="builder-step-connector" aria-hidden="true"></i><span><b>2</b> Set options</span><i class="builder-step-connector" aria-hidden="true"></i><span><b>3</b> Share your link</span>
       </div>
     </div>
 
@@ -80,13 +80,22 @@
     </summary>
     <div class="csv-import-body" id="csv-import-content">
       <div>
-        <p>CSV columns: <code>destination_url</code> (required) and <code>short_code</code> (optional). Use a UTF-8 CSV; invalid rows and duplicate codes are skipped. Up to 500 rows, 2 MB.</p>
+        <p>Required column: <code>destination_url</code>. Optional: <code>short_code</code>. Max 2 MB and 500 rows.</p>
         <a class="csv-example" href="data:text/csv;charset=utf-8,destination_url%2Cshort_code%0Ahttps%3A%2F%2Fexample.com%2Fcampaign%2Cspring-launch" download="linkpulse-import-example.csv">Download example CSV</a>
       </div>
       <form method="post" action="{{ url_for('import_links') }}" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="csv-file">CSV file</label>
-        <input id="csv-file" name="csv_file" type="file" accept=".csv,text/csv" required>
+        <span class="csv-file-label">CSV file</span>
+        <label class="csv-dropzone" id="csv-dropzone" for="csv-file" tabindex="0" role="button" aria-describedby="csv-dropzone-prompt">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"></path></svg>
+          <span id="csv-dropzone-prompt">Drag &amp; drop your CSV here or click to browse</span>
+        </label>
+        <input class="csv-file-input" id="csv-file" name="csv_file" type="file" accept=".csv,text/csv" required>
+        <div class="csv-selected-file" id="csv-selected-file" hidden>
+          <span class="csv-file-name" id="csv-file-name"></span>
+          <button class="csv-file-clear" id="csv-file-clear" type="button" aria-label="Clear selected file">×</button>
+        </div>
+        <p class="csv-file-feedback" id="csv-file-feedback" role="status" aria-live="polite"></p>
         <button class="primary-button" type="submit">Import links <span aria-hidden="true">↗</span></button>
       </form>
     </div>
@@ -181,6 +190,67 @@
   });
 </script>
 <script>
+  const csvInput = document.querySelector("#csv-file");
+  if (csvInput) {
+    const dropzone = document.querySelector("#csv-dropzone");
+    const selectedFile = document.querySelector("#csv-selected-file");
+    const fileName = document.querySelector("#csv-file-name");
+    const clearFile = document.querySelector("#csv-file-clear");
+    const feedback = document.querySelector("#csv-file-feedback");
+
+    function showSelectedFile(file) {
+      const isCsv = file && (file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv"));
+      if (!isCsv) {
+        csvInput.value = "";
+        selectedFile.hidden = true;
+        feedback.textContent = file ? "Please choose a .csv file." : "";
+        dropzone.classList.remove("has-file");
+        return;
+      }
+      fileName.textContent = file.name;
+      selectedFile.hidden = false;
+      feedback.textContent = "";
+      dropzone.classList.add("has-file");
+    }
+
+    csvInput.addEventListener("change", () => showSelectedFile(csvInput.files[0]));
+    csvInput.addEventListener("invalid", (event) => {
+      event.preventDefault();
+      feedback.textContent = "Choose a CSV file to import.";
+      dropzone.focus();
+    });
+    ["dragenter", "dragover"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragging");
+    }));
+    ["dragleave", "drop"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("is-dragging");
+    }));
+    dropzone.addEventListener("drop", (event) => {
+      const files = event.dataTransfer.files;
+      if (!files.length) return;
+      const transfer = new DataTransfer();
+      transfer.items.add(files[0]);
+      csvInput.files = transfer.files;
+      showSelectedFile(files[0]);
+    });
+    dropzone.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        csvInput.click();
+      }
+    });
+    clearFile.addEventListener("click", () => {
+      csvInput.value = "";
+      selectedFile.hidden = true;
+      dropzone.classList.remove("has-file");
+      feedback.textContent = "";
+      dropzone.focus();
+    });
+  }
+</script>
+<script>
   const linkRows = [...document.querySelectorAll("[data-link-row]")];
   if (linkRows.length) {
     const searchInput = document.querySelector("#link-search");
@@ -262,8 +332,28 @@
     });
   }
 
+  const importPanel = document.querySelector("#link-import");
+  document.querySelectorAll('a[href="#link-import"]').forEach((link) => {
+    link.addEventListener("click", () => {
+      importPanel.open = true;
+      requestAnimationFrame(updateWorkspaceNavigation);
+    });
+  });
+
+  function openImportPanelForHash() {
+    if (window.location.hash !== "#link-import") return;
+    importPanel.open = true;
+    requestAnimationFrame(() => {
+      importPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+      updateWorkspaceNavigation();
+    });
+  }
+
   window.addEventListener("scroll", updateWorkspaceNavigation, { passive: true });
   window.addEventListener("resize", updateWorkspaceNavigation);
+  window.addEventListener("hashchange", openImportPanelForHash);
+  window.addEventListener("pageshow", openImportPanelForHash);
+  openImportPanelForHash();
   updateWorkspaceNavigation();
 </script>
 {% endblock %}
