@@ -80,7 +80,7 @@
     </summary>
     <div class="csv-import-body" id="csv-import-content">
       <div>
-        <p>Required column: <code>destination_url</code>. Optional: <code>short_code</code>. Max 2 MB and 500 rows.</p>
+        <p>Required column: <code>destination_url</code>. Optional: <code>short_code</code>.<br>Use UTF-8 CSV. Max 500 rows / 2 MB. Invalid or duplicate rows will be skipped.</p>
         <a class="csv-example" href="data:text/csv;charset=utf-8,destination_url%2Cshort_code%0Ahttps%3A%2F%2Fexample.com%2Fcampaign%2Cspring-launch" download="linkpulse-import-example.csv">Download example CSV</a>
       </div>
       <form method="post" action="{{ url_for('import_links') }}" enctype="multipart/form-data">
